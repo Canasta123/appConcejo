@@ -1,0 +1,207 @@
+---
+// Obtener la ruta actual para determinar qué ítem está activo
+const currentPath = Astro.url.pathname;
+
+// Función de ayuda para verificar si la ruta es activa (resistente a barras finales)
+const isActive = (path: string) => {
+  const normCurrent = currentPath.replace(/\/$/, '') || '/';
+  const normPath = path.replace(/\/$/, '') || '/';
+  if (normPath === '/') return normCurrent === '/';
+  return normCurrent.startsWith(normPath);
+};
+---
+
+<nav class="bottom-nav">
+  <a href="/" class={`nav-item ${isActive('/') ? 'active' : ''}`} aria-label="Inicio">
+    <div class="icon-container">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span class="active-indicator"></span>
+    </div>
+    <span class="nav-label">Inicio</span>
+  </a>
+
+  <a href="/noticias" class={`nav-item ${isActive('/noticias') ? 'active' : ''}`} aria-label="Noticias">
+    <div class="icon-container">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
+        <path d="M18 14h-8"></path>
+        <path d="M15 18h-5"></path>
+        <path d="M10 6h8v4h-8V6Z"></path>
+      </svg>
+      <span class="active-indicator"></span>
+    </div>
+    <span class="nav-label">Noticias</span>
+  </a>
+
+  <!-- Botón MÁS (Centrado y Resaltado como FAB Flotante) -->
+  <a href="/mas" class={`nav-item center-fab ${isActive('/mas') ? 'active' : ''}`} aria-label="Más Opciones">
+    <div class="fab-circle">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+        <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+      </svg>
+    </div>
+    <span class="nav-label fab-label">Menú</span>
+  </a>
+
+  <a href="/agenda" class={`nav-item ${isActive('/agenda') ? 'active' : ''}`} aria-label="Agenda">
+    <div class="icon-container">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      <span class="active-indicator"></span>
+    </div>
+    <span class="nav-label">Agenda</span>
+  </a>
+
+  <a href="/transmisiones" class={`nav-item ${isActive('/transmisiones') ? 'active' : ''}`} aria-label="En Vivo">
+    <div class="icon-container">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+      </svg>
+      <span class="active-indicator"></span>
+    </div>
+    <span class="nav-label">En Vivo</span>
+  </a>
+</nav>
+
+<style>
+  /* Variables locales de navegación por si no están definidas globalmente */
+  .bottom-nav {
+    --nav-height: 64px;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: calc(var(--nav-height) + var(--safe-area-bottom));
+    padding-bottom: var(--safe-area-bottom);
+    
+    /* Efecto Glassmorphism */
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.03);
+    
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-decoration: none;
+    color: var(--color-text-secondary, #616161);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    min-width: 60px;
+    /* Touch target accesible de 44x44px mínimo */
+    min-height: 44px;
+    padding: 6px 0;
+    cursor: pointer;
+    position: relative;
+    z-index: 10001;
+    pointer-events: auto;
+  }
+
+  .icon-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .nav-item svg {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+  }
+
+  .nav-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    pointer-events: none;
+  }
+
+  .active-indicator {
+    position: absolute;
+    top: -8px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--color-primary, #3359A4);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s ease;
+    pointer-events: none;
+  }
+
+  /* Estilo FAB Flotante para Menú / Más en el centro */
+  .nav-item.center-fab {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+
+  .fab-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary-light, #4A6DB8), var(--color-primary, #3359A4));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    box-shadow: 0 6px 16px rgba(51, 89, 164, 0.45);
+    border: 3px solid #FFFFFF;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .nav-item.center-fab:hover .fab-circle,
+  .nav-item.center-fab.active .fab-circle {
+    background: linear-gradient(135deg, var(--color-primary, #3359A4), var(--color-primary-dark, #2A4783));
+    transform: scale(1.1);
+    box-shadow: 0 8px 22px rgba(51, 89, 164, 0.6);
+    border-color: #FFD402;
+  }
+
+  .fab-label {
+    font-weight: 700 !important;
+    color: var(--color-primary, #3359A4);
+  }
+
+  /* Estado Activo */
+  .nav-item.active {
+    color: var(--color-primary, #3359A4);
+    opacity: 1;
+  }
+
+  .nav-item.active svg {
+    transform: scale(1.05);
+    stroke-width: 2.5px;
+  }
+
+  .nav-item.active .nav-label {
+    font-weight: 600;
+  }
+
+  .nav-item.active .active-indicator {
+    opacity: 1;
+    transform: scale(1);
+  }
+</style>

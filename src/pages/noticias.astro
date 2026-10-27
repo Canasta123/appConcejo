@@ -1,0 +1,1023 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Noticias - Concejo Municipal de Chía" description="Manténgase informado con las últimas noticias, acuerdos y comunicados del Concejo Municipal de Chía.">
+  <div class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">Noticias</h1>
+    </header>
+
+    <!-- Barra de Búsqueda -->
+    <div class="search-container">
+      <div class="search-bar">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="news-search-input" placeholder="Buscar noticias por título o contenido..." />
+      </div>
+    </div>
+
+    <!-- Chips de Filtro -->
+    <div class="filter-chips">
+      <button class="chip active" data-filter="todas">Todas</button>
+      <button class="chip" data-filter="sesion">Sesiones</button>
+      <button class="chip" data-filter="acuerdo">Acuerdos</button>
+      <button class="chip" data-filter="comunicado">Comunicados</button>
+    </div>
+
+    <!-- Cuadrícula de Noticias (1 Columna en Móvil estilo Sitio Oficial) -->
+    <div class="news-list" id="news-grid">
+      <!-- Loading Skeleton -->
+      <div class="news-post-skeleton">
+        <div class="sk-poster"></div>
+        <div class="sk-details">
+          <div class="sk-line title"></div>
+          <div class="sk-line"></div>
+          <div class="sk-line short"></div>
+        </div>
+      </div>
+      <div class="news-post-skeleton">
+        <div class="sk-poster"></div>
+        <div class="sk-details">
+          <div class="sk-line title"></div>
+          <div class="sk-line"></div>
+          <div class="sk-line short"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lector de Noticia Completa -->
+  <div class="modal-backdrop" id="news-modal" style="display:none;">
+    <div class="modal-dialog">
+      <header class="modal-header">
+        <span class="modal-badge">Noticia Institucional</span>
+        <button class="modal-close" id="modal-close-btn" aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-body">
+        <h2 class="modal-title" id="modal-title">Título de la Noticia</h2>
+        <div class="modal-meta" id="modal-meta">
+          <span>📅 <span id="modal-date">Fecha</span></span>
+          <span>📁 Noticias</span>
+          <span>📄 Concejo de Chía</span>
+        </div>
+        <div class="modal-media-box" id="modal-media-box" style="display:none;"></div>
+        <div class="modal-content-html" id="modal-content"></div>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn-share" id="modal-share-btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+          Compartir
+        </button>
+        <button class="btn-close-footer" id="modal-close-footer-btn">Cerrar</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    import { getNoticias } from '../utils/api.js';
+
+    const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    let globalNoticias = [];
+
+    function formatFechaISO(fechaStr) {
+      if (!fechaStr) return '';
+      const d = new Date(fechaStr);
+      if (isNaN(d.getTime())) return fechaStr;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function extractFirstImgSrc(htmlStr) {
+      if (!htmlStr) return null;
+      // Try multiple patterns for WordPress image extraction
+      // 1. data-src (lazy loading)
+      // 2. src (standard)
+      // 3. srcset (responsive)
+      const patterns = [
+        /<img[^>]+data-src=["']([^"']+)["']/i,
+        /<img[^>]+src=["']([^"']+)["']/i,
+        /<img[^>]+srcset=["']([^"'\s]+)/i,
+        /url\(['"]?([^'")\s]+\.(?:jpg|jpeg|png|gif|webp))/i
+      ];
+      
+      for (const pattern of patterns) {
+        const match = htmlStr.match(pattern);
+        if (match && match[1]) {
+          return normalizeImageUrl(match[1]);
+        }
+      }
+      return null;
+    }
+
+    function normalizeImageUrl(url) {
+      if (!url || url === '' || url === 'null') return null;
+      url = url.trim();
+      if (url.startsWith('//')) return 'https:' + url;
+      if (url.startsWith('/')) return 'https://concejomunicipalchia.gov.co' + url;
+      if (!url.startsWith('http')) return 'https://concejomunicipalchia.gov.co/' + url;
+      return url;
+    }
+
+    function stripHtml(html) {
+      if (!html) return '';
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    }
+
+    function renderNoticias(noticias) {
+      const container = document.getElementById('news-grid');
+      if (!container) return;
+
+      if (!noticias || noticias.length === 0) {
+        container.innerHTML = '<p class="empty-msg">No se encontraron noticias con los criterios de búsqueda.</p>';
+        return;
+      }
+
+      container.innerHTML = noticias.map((n, i) => {
+        const allImages = extractAllImages(n.contenido, n.url_imagen);
+        const rawText = stripHtml(n.contenido);
+        const excerpt = rawText.length > 100 ? rawText.substring(0, 100) + '...' : rawText;
+        const fechaFormat = formatFechaISO(n.fecha_pub);
+        
+        let mediaHtml = '';
+        if (allImages.length === 0) {
+          mediaHtml = `
+            <div class="post-media-placeholder">
+              <img src="/Logos/1.ESCUDO CONCEJO PNG.png" alt="Escudo" class="placeholder-shield-img" />
+              <span>Concejo de Chía</span>
+            </div>
+          `;
+        } else if (allImages.length === 1) {
+          mediaHtml = `
+            <img src="${allImages[0]}" alt="${n.titulo}" loading="lazy" class="post-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div class="post-media-placeholder" style="display:none;">
+              <img src="/Logos/1.ESCUDO CONCEJO PNG.png" alt="Escudo" class="placeholder-shield-img" />
+              <span>Concejo de Chía</span>
+            </div>
+          `;
+        } else {
+          // Carrusel deslizable en la tarjeta
+          mediaHtml = `
+            <div class="card-carousel-container" onclick="event.stopPropagation();">
+              <div class="card-carousel-track">
+                ${allImages.map((img, idx) => `
+                  <div class="card-carousel-slide">
+                    <img src="${img}" alt="${n.titulo} (${idx + 1}/${allImages.length})" loading="lazy" class="post-img" onerror="this.src='/Logos/1.ESCUDO CONCEJO PNG.png';" />
+                  </div>
+                `).join('')}
+              </div>
+              <div class="carousel-counter-badge">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span>${allImages.length} fotos</span>
+              </div>
+            </div>
+          `;
+        }
+        
+        return `
+          <article class="news-post-card" data-id="${n.id_noticia || i}">
+            <div class="post-media">
+              ${mediaHtml}
+            </div>
+            <div class="post-body">
+              <div class="post-meta-row">
+                <span class="meta-item">🗓️ ${fechaFormat}</span>
+                ${allImages.length > 1 ? `<span class="multi-img-pill">📸 Galería</span>` : ''}
+              </div>
+              <h2 class="post-title">${n.titulo}</h2>
+              <p class="post-excerpt">${excerpt}</p>
+              <button class="btn-read-post" data-id="${n.id_noticia || i}">
+                <span>Leer noticia completa</span>
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            </div>
+          </article>`;
+      }).join('');
+
+      // Click event for full reader modal
+      container.querySelectorAll('.news-post-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = card.getAttribute('data-id');
+          const noticia = globalNoticias.find(n => (n.id_noticia || '').toString() === id || (globalNoticias.indexOf(n)).toString() === id);
+          if (noticia) abrirModal(noticia);
+        });
+      });
+    }
+
+    function extractAllImages(htmlStr, heroUrl) {
+      const images = [];
+      if (heroUrl) {
+        const norm = normalizeImageUrl(heroUrl);
+        if (norm && !images.includes(norm)) images.push(norm);
+      }
+      if (htmlStr) {
+        const regex = /<img[^>]+(?:src|data-src)=["']([^"']+)["']/gi;
+        let match;
+        while ((match = regex.exec(htmlStr)) !== null) {
+          const norm = normalizeImageUrl(match[1]);
+          if (norm && !images.includes(norm)) {
+            images.push(norm);
+          }
+        }
+      }
+      return images;
+    }
+
+    function abrirModal(noticia) {
+      const modal = document.getElementById('news-modal');
+      const titleEl = document.getElementById('modal-title');
+      const dateEl = document.getElementById('modal-date');
+      const contentEl = document.getElementById('modal-content');
+      const mediaBox = document.getElementById('modal-media-box');
+
+      if (!modal) return;
+
+      titleEl.textContent = noticia.titulo;
+      dateEl.textContent = formatFechaISO(noticia.fecha_pub);
+      contentEl.innerHTML = noticia.contenido || '<p>Sin contenido adicional.</p>';
+
+      const allImages = extractAllImages(noticia.contenido, noticia.url_imagen);
+
+      if (allImages.length === 1) {
+        mediaBox.style.display = 'block';
+        mediaBox.innerHTML = `<img src="${allImages[0]}" alt="${noticia.titulo}" class="modal-single-img" onerror="this.parentElement.style.display='none';" />`;
+      } else if (allImages.length > 1) {
+        mediaBox.style.display = 'block';
+        mediaBox.innerHTML = `
+          <div class="carousel-container">
+            <div class="carousel-track" id="modal-carousel-track">
+              ${allImages.map((img, idx) => `
+                <div class="carousel-slide">
+                  <img src="${img}" alt="${noticia.titulo} - Foto ${idx + 1}" loading="lazy" onerror="this.style.display='none';" />
+                </div>
+              `).join('')}
+            </div>
+            <button class="carousel-nav-btn prev" id="modal-carousel-prev" aria-label="Foto anterior">&#10094;</button>
+            <button class="carousel-nav-btn next" id="modal-carousel-next" aria-label="Foto siguiente">&#10095;</button>
+            <div class="carousel-dots">
+              ${allImages.map((_, idx) => `<span class="carousel-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></span>`).join('')}
+            </div>
+          </div>`;
+
+        // Listen for scroll snap change to update active dot and enable buttons
+        setTimeout(() => {
+          const track = document.getElementById('modal-carousel-track');
+          const dots = mediaBox.querySelectorAll('.carousel-dot');
+          const prevBtn = document.getElementById('modal-carousel-prev');
+          const nextBtn = document.getElementById('modal-carousel-next');
+
+          if (track) {
+            track.addEventListener('scroll', () => {
+              const slideWidth = track.clientWidth || 1;
+              const index = Math.round(track.scrollLeft / slideWidth);
+              dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === index);
+              });
+            });
+
+            if (prevBtn) {
+              prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
+              });
+            }
+
+            if (nextBtn) {
+              nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+              });
+            }
+
+            dots.forEach(dot => {
+              dot.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetIdx = parseInt(dot.getAttribute('data-idx') || '0', 10);
+                track.scrollTo({ left: targetIdx * track.clientWidth, behavior: 'smooth' });
+              });
+            });
+          }
+        }, 50);
+      } else {
+        mediaBox.style.display = 'none';
+        mediaBox.innerHTML = '';
+      }
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      // Share button
+      const shareBtn = document.getElementById('modal-share-btn');
+      if (shareBtn) {
+        shareBtn.onclick = () => {
+          if (navigator.share) {
+            navigator.share({
+              title: noticia.titulo,
+              text: stripHtml(noticia.contenido).substring(0, 100),
+              url: window.location.href
+            }).catch(() => {});
+          } else {
+            navigator.clipboard?.writeText(window.location.href);
+            alert('¡Enlace copiado al portapapeles!');
+          }
+        };
+      }
+    }
+
+    function cerrarModal() {
+      const modal = document.getElementById('news-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    async function init() {
+      const noticias = await getNoticias();
+      globalNoticias = noticias || [];
+      renderNoticias(globalNoticias);
+
+      // Search
+      const input = document.getElementById('news-search-input');
+      if (input) {
+        input.addEventListener('input', (e) => {
+          const query = e.target.value.toLowerCase();
+          const filtradas = globalNoticias.filter(n => 
+            (n.titulo || '').toLowerCase().includes(query) ||
+            (n.contenido || '').toLowerCase().includes(query)
+          );
+          renderNoticias(filtradas);
+        });
+      }
+
+      // Chips
+      const chips = document.querySelectorAll('.filter-chips .chip');
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          chips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const filter = chip.getAttribute('data-filter');
+          if (filter === 'todas') {
+            renderNoticias(globalNoticias);
+          } else {
+            const filtradas = globalNoticias.filter(n => 
+              (n.titulo || '').toLowerCase().includes(filter) ||
+              (n.contenido || '').toLowerCase().includes(filter)
+            );
+            renderNoticias(filtradas);
+          }
+        });
+      });
+
+      document.getElementById('modal-close-btn')?.addEventListener('click', cerrarModal);
+      document.getElementById('modal-close-footer-btn')?.addEventListener('click', cerrarModal);
+      document.getElementById('news-modal')?.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-backdrop')) cerrarModal();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</MainLayout>
+
+<style>
+  :root {
+    --primary: #3359A4;
+    --primary-dark: #2A4783;
+    --bg: #F8F9FA;
+    --surface: #FFFFFF;
+    --text-main: #1F2937;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+  }
+
+  .page-container {
+    padding: 16px;
+    padding-bottom: 90px;
+    background-color: var(--bg);
+    min-height: 100vh;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.6rem;
+    color: var(--primary-dark);
+    margin: 0;
+  }
+
+  /* Search */
+  .search-container {
+    margin-bottom: 16px;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .search-bar svg {
+    color: var(--text-muted);
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+
+  .search-bar input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    background: transparent;
+  }
+
+  /* Chips */
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chip {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .chip.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  /* News List (Tarjetas bien separadas) */
+  .news-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 540px) {
+    .news-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+  }
+
+  /* News Post Card (Recuadro flotante con sombra suave y tono sutil) */
+  .news-post-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(28, 51, 98, 0.08), 0 8px 10px -6px rgba(28, 51, 98, 0.05);
+    border: 1px solid rgba(42, 71, 131, 0.12);
+    cursor: pointer;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  .news-post-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 32px -4px rgba(42, 71, 131, 0.18), 0 8px 16px -4px rgba(0, 0, 0, 0.06);
+    border-color: var(--primary);
+  }
+
+  .post-media {
+    width: 100% !important;
+    height: 175px !important;
+    max-height: 175px !important;
+    background-color: #E5E7EB;
+    overflow: hidden !important;
+    position: relative;
+    box-sizing: border-box;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  /* Carrusel en la tarjeta */
+  .card-carousel-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-carousel-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .card-carousel-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card-carousel-slide {
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    position: relative;
+  }
+
+  .carousel-counter-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(17, 24, 39, 0.75);
+    backdrop-filter: blur(4px);
+    color: #FFFFFF;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .multi-img-pill {
+    background: rgba(0, 151, 65, 0.1);
+    color: var(--secondary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+
+  .post-img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    display: block !important;
+  }
+
+  .post-media-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .placeholder-shield-img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  }
+
+  .post-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-between;
+    background: #FFFFFF;
+  }
+
+  .post-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .meta-item {
+    font-weight: 500;
+  }
+
+  .post-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0 0 6px 0;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .post-excerpt {
+    font-size: 0.82rem;
+    color: #4B5563;
+    line-height: 1.45;
+    margin: 0 0 12px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .btn-read-post {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background-color: rgba(51, 89, 164, 0.08);
+    color: var(--primary);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .btn-read-post:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 16px;
+    font-size: 0.95rem;
+  }
+
+  /* Skeleton Loading */
+  .news-post-skeleton {
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .sk-poster {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .sk-details {
+    padding: 20px;
+  }
+
+  .sk-line {
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    margin-bottom: 10px;
+  }
+
+  .sk-line.title { height: 22px; width: 80%; margin-bottom: 14px; }
+  .sk-line.short { width: 45%; }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Modal Lector Flotante */
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  @media (min-width: 650px) {
+    .modal-backdrop {
+      align-items: center;
+      padding: 20px;
+    }
+  }
+
+  .modal-dialog {
+    background-color: var(--surface);
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+    animation: slideUp 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+
+  @media (min-width: 650px) {
+    .modal-dialog {
+      border-radius: 16px;
+      max-height: 85vh;
+    }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background-color: #FAF5EB;
+  }
+
+  .modal-badge {
+    background-color: rgba(51, 89, 164, 0.12);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+  }
+
+  .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+  }
+
+  .modal-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0 0 10px 0;
+    line-height: 1.35;
+  }
+
+  .modal-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-media-box {
+    width: 100%;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .modal-single-img {
+    width: 100%;
+    max-width: 100%;
+    max-height: 380px;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  }
+
+  /* Carousel / Swipe Gallery */
+  .carousel-container {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #0F172A;
+  }
+
+  .carousel-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .carousel-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel-slide {
+    width: 100%;
+    min-width: 100%;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16/9;
+    max-height: 380px;
+    background-color: #1E293B;
+  }
+
+  .carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .carousel-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+  }
+
+  .carousel-nav-btn:hover {
+    background: rgba(17, 24, 39, 0.9);
+    transform: translateY(-50%) scale(1.1);
+    color: #FFD402;
+  }
+
+  .carousel-nav-btn.prev {
+    left: 10px;
+  }
+
+  .carousel-nav-btn.next {
+    right: 10px;
+  }
+
+  .carousel-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    z-index: 10;
+  }
+
+  .carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .carousel-dot.active {
+    width: 20px;
+    border-radius: 10px;
+    background-color: #FFD402;
+  }
+
+  .modal-content-html {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--text-main);
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .modal-content-html img {
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: 480px !important;
+    object-fit: contain !important;
+    border-radius: 8px;
+    margin: 14px auto;
+    display: block;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .modal-content-html figure {
+    max-width: 100% !important;
+    margin: 14px 0;
+  }
+
+  .modal-content-html table {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block;
+    overflow-x: auto;
+  }
+
+  .modal-content-html a {
+    color: var(--primary);
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background-color: #FAF5EB;
+  }
+
+  .btn-share {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-close-footer {
+    background-color: #E5E7EB;
+    color: var(--text-main);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>

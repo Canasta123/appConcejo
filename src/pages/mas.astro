@@ -1,0 +1,269 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Más Opciones - Concejo Municipal de Chía" description="Menú de opciones adicionales, configuración e información de la app del Concejo.">
+  <div class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">Más Opciones</h1>
+    </header>
+
+    <!-- Lista de Opciones -->
+    <div class="menu-list">
+      <a href="/transmisiones" class="menu-item">
+        <div class="menu-icon" style="color: var(--primary);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+        </div>
+        <div class="menu-text">Transmisiones en Vivo</div>
+        <div class="menu-arrow"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div>
+      </a>
+
+      <a href="/recorrido" class="menu-item">
+        <div class="menu-icon" style="color: var(--primary);">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+        </div>
+        <div class="menu-text">Recorrido 360°</div>
+        <div class="menu-arrow"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div>
+      </a>
+
+      <!-- Fase 2 Items -->
+      <a href="#" class="menu-item disabled">
+        <div class="menu-icon" style="color: var(--primary);">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+        <div class="menu-text">Concejales</div>
+        <span class="badge-soon">Próximamente</span>
+      </a>
+
+      <a href="#" class="menu-item disabled">
+        <div class="menu-icon" style="color: var(--primary);">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        </div>
+        <div class="menu-text">Encuestas Ciudadanas</div>
+        <span class="badge-soon">Próximamente</span>
+      </a>
+
+      <a href="#" class="menu-item disabled">
+        <div class="menu-icon" style="color: var(--primary);">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        </div>
+        <div class="menu-text">Notificaciones</div>
+        <span class="badge-soon">Próximamente</span>
+      </a>
+    </div>
+
+    <!-- Sección Contacto -->
+    <div class="info-card contact-info">
+      <h3>Contacto</h3>
+      <ul>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Calle 12 No. 10 - 45, Chía, Cundinamarca
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+          +57 (601) 863 1111
+        </li>
+        <li>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          contacto@concejodechia.gov.co
+        </li>
+      </ul>
+    </div>
+
+    <!-- Sección Acerca de -->
+    <div class="about-section">
+      <div class="about-logo-wrapper">
+        <img src="/Logos/LOGO CONCEJO VERTICAL.png" alt="Concejo Municipal de Chía" class="about-logo-img" />
+      </div>
+      <p class="app-desc">Aplicación Oficial del Concejo Municipal de Chía. Conectando a la comunidad con las decisiones locales.</p>
+      <p class="app-version">Versión 1.0.0</p>
+      <p class="app-copyright">Concejo Municipal de Chía © 2026</p>
+    </div>
+  </div>
+</MainLayout>
+
+<style>
+  :root {
+    --primary: #3359A4;
+    --primary-light: #4A6DB8;
+    --primary-dark: #2A4783;
+    --secondary: #009741;
+    --accent: #FFD402;
+    --bg: #F5F5F5;
+    --surface: #FFFFFF;
+    --text-main: #212121;
+    --text-muted: #616161;
+    --border: #E0E0E0;
+  }
+
+  .page-container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background-color: var(--bg);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    margin: 0;
+  }
+
+  /* Menu List */
+  .menu-list {
+    background-color: var(--surface);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--text-main);
+    transition: background-color 0.2s;
+  }
+
+  .menu-item:last-child {
+    border-bottom: none;
+  }
+
+  .menu-item:hover:not(.disabled) {
+    background-color: rgba(0,0,0,0.02);
+  }
+
+  .menu-item.disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .menu-icon {
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .menu-text {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .menu-arrow {
+    color: var(--text-muted);
+  }
+
+  .badge-admin {
+    background-color: rgba(51, 89, 164, 0.12);
+    color: var(--primary);
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .badge-soon {
+    background-color: var(--accent);
+    color: var(--text-main);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* Contact Info */
+  .info-card {
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .info-card h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    margin: 0 0 16px 0;
+    color: var(--primary-dark);
+  }
+
+  .contact-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .contact-info li {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    margin-bottom: 12px;
+  }
+
+  .contact-info li:last-child {
+    margin-bottom: 0;
+  }
+
+  .contact-info svg {
+    color: var(--primary);
+    margin-right: 12px;
+  }
+
+  /* About Section */
+  .about-section {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-muted);
+  }
+
+  .about-logo-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #FFFFFF;
+    padding: 12px 20px;
+    border-radius: 16px;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+  }
+
+  .about-logo-img {
+    width: 140px;
+    height: auto;
+    max-height: 120px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .app-desc {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+  }
+
+  .app-version {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+  }
+
+  .app-copyright {
+    font-size: 0.75rem;
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,209 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Recorrido Virtual 360° - Concejo Municipal de Chía" description="Explore las instalaciones del Concejo Municipal de Chía a través de nuestro recorrido virtual 360 grados.">
+  <div class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">Recorrido Virtual 360°</h1>
+      <p class="page-desc">Explora las instalaciones del Concejo Municipal de Chía en 360°. Conoce el recinto donde se toman las decisiones de nuestro municipio.</p>
+    </header>
+
+    <!-- Área del Iframe 360 (Placeholder por ahora) -->
+    <div class="tour-container">
+      <div class="tour-placeholder">
+        <div class="vr-icon">
+          <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+        </div>
+        <h3>Recorrido Virtual</h3>
+        <p>Toca para iniciar la experiencia interactiva</p>
+        <button class="start-btn">Iniciar Recorrido</button>
+      </div>
+      <!-- Aquí iría el iframe de Marzipano -->
+      <!-- <iframe src="https://app.concejodechia.gov.co/recorrido" class="tour-iframe" allowfullscreen></iframe> -->
+    </div>
+
+    <!-- Tarjetas de Información -->
+    <div class="info-section">
+      <h2 class="section-title">Sobre nuestras instalaciones</h2>
+      
+      <div class="info-cards">
+        <article class="info-card">
+          <div class="card-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+          </div>
+          <div class="card-text">
+            <h3>Recinto Principal</h3>
+            <p>Espacio donde se llevan a cabo las sesiones plenarias con la participación de los 15 concejales del municipio.</p>
+          </div>
+        </article>
+
+        <article class="info-card">
+          <div class="card-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <div class="card-text">
+            <h3>Salas de Comisiones</h3>
+            <p>Áreas destinadas para el trabajo detallado y estudio de proyectos de acuerdo por parte de las comisiones permanentes.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<style>
+  :root {
+    --primary: #3359A4;
+    --primary-dark: #2A4783;
+    --secondary: #009741;
+    --accent: #FFD402;
+    --bg: #F5F5F5;
+    --surface: #FFFFFF;
+    --text-main: #212121;
+    --text-muted: #616161;
+  }
+
+  .page-container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background-color: var(--bg);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    margin: 0 0 8px 0;
+  }
+
+  .page-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* Tour Container */
+  .tour-container {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background-color: #2c3e50;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .tour-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .vr-icon {
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+
+  .tour-placeholder h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    margin: 0 0 8px 0;
+  }
+
+  .tour-placeholder p {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin: 0 0 20px 0;
+  }
+
+  .start-btn {
+    background-color: white;
+    color: var(--primary-dark);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+  }
+
+  .start-btn:active {
+    transform: scale(0.95);
+  }
+
+  .tour-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* Info Section */
+  .section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+  }
+
+  .info-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .info-card {
+    display: flex;
+    background-color: var(--surface);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+
+  .card-icon {
+    color: var(--primary);
+    margin-right: 16px;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .card-text h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: var(--text-main);
+  }
+
+  .card-text p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+</style>

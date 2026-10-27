@@ -1,0 +1,297 @@
+---
+import BottomNav from '../components/BottomNav.astro';
+import '../styles/global.css';
+import '../styles/components.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Aplicación oficial del Concejo Municipal de Chía - Noticias, agenda, documentos y más.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, viewport-fit=cover" />
+    <meta name="MobileOptimized" content="width" />
+    <meta name="HandheldFriendly" content="true" />
+    
+    <!-- Script de protección de Viewport Móvil (Previene miniatura por Modo PC) -->
+    <script is:inline>
+      (function() {
+        var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+        if (isTouch) {
+          var meta = document.querySelector('meta[name="viewport"]');
+          if (meta) {
+            meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no, viewport-fit=cover');
+          }
+        }
+      })();
+    </script>
+    
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    
+    <!-- PWA / Mobile Meta Tags -->
+    <meta name="theme-color" content="#2A4783" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Concejo Chía" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Manifest & Favicons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Concejo de Chía" />
+  </head>
+  <body>
+    <!-- Cabecera de la Aplicación -->
+    <header class="app-header">
+      <a href="/" class="logo-area" aria-label="Inicio Concejo de Chía">
+        <img 
+          src="/Logos/1.ESCUDO CONCEJO PNG.png" 
+          alt="Escudo Concejo Municipal de Chía" 
+          class="header-shield-img"
+        />
+        <div class="header-titles">
+          <span class="header-title-main">Concejo de Chía</span>
+          <span class="header-subtitle">MUNICIPIO DE CHÍA</span>
+        </div>
+      </a>
+      
+      <a href="/transmisiones" class="live-pill-btn" id="header-live-pill" aria-label="Transmisión EN VIVO">
+        <span class="pulse-dot" id="header-pulse-dot"></span>
+        <span id="header-live-text">EN VIVO</span>
+      </a>
+    </header>
+
+    <div class="header-stripe">
+      <div style="flex: 1; height: 100%; background-color: #FFD402;"></div>
+      <div style="flex: 1; height: 100%; background-color: #009741;"></div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="app-content">
+      <slot />
+    </main>
+
+    <!-- Navegación Inferior -->
+    <BottomNav />
+
+    <!-- Verificación Dinámica de Estado EN VIVO y SW -->
+    <script>
+      async function checkHeaderLiveStatus() {
+        try {
+          const res = await fetch('/api/public/get_videos.php');
+          if (!res.ok) return;
+          const data = await res.json();
+          
+          const pill = document.getElementById('header-live-pill');
+          const dot = document.getElementById('header-pulse-dot');
+          const text = document.getElementById('header-live-text');
+
+          if (data && data.is_live) {
+            if (pill) pill.classList.add('is-live');
+            if (dot) dot.classList.add('active');
+            if (text) text.textContent = '🔴 EN VIVO';
+          } else {
+            if (pill) pill.classList.remove('is-live');
+            if (dot) dot.classList.remove('active');
+            if (text) text.textContent = 'EN VIVO';
+          }
+        } catch (e) {
+          // Silencioso
+        }
+      }
+
+      if (typeof window !== 'undefined') {
+        window.addEventListener('DOMContentLoaded', checkHeaderLiveStatus);
+      }
+
+      // Registro del Service Worker para PWA (En Producción)
+      if ('serviceWorker' in navigator) {
+        if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+              console.log('SW registrado en producción:', reg.scope);
+            }).catch(err => {
+              console.warn('Error al registrar SW:', err);
+            });
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  /* Estilos específicos del layout principal */
+  
+  :root {
+    --header-height: 60px;
+  }
+
+  body {
+    background-color: var(--color-background, #F5F5F5);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(to right, var(--color-primary-dark, #2A4783), var(--color-primary, #3359A4));
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    /* Safe area para dispositivos con notch (ej. iPhone) */
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+  }
+
+  .header-stripe {
+    height: 4px;
+    display: flex;
+    width: 100%;
+    position: sticky;
+    top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+    z-index: 99;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    max-width: 72%;
+    transition: opacity 0.2s ease;
+  }
+
+  .logo-area:active {
+    opacity: 0.85;
+  }
+
+  .header-shield-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+    flex-shrink: 0;
+  }
+
+  .header-titles {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.15;
+  }
+
+  .header-title-main {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .header-subtitle {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #FFD402;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 380px) {
+    .header-shield-img {
+      height: 34px;
+    }
+    .header-title-main {
+      font-size: 1.02rem;
+    }
+    .header-subtitle {
+      font-size: 0.58rem;
+    }
+  }
+
+  .live-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgba(227, 13, 33, 0.9);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(227, 13, 33, 0.35);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .live-pill-btn:hover {
+    background-color: #E30D21;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(227, 13, 33, 0.5);
+  }
+
+  .live-pill-btn.is-live {
+    background-color: #E30D21;
+    box-shadow: 0 0 14px rgba(227, 13, 33, 0.8);
+    animation: livePillGlow 1.5s infinite;
+  }
+
+  @keyframes livePillGlow {
+    0% { box-shadow: 0 0 0 0 rgba(227, 13, 33, 0.8); }
+    70% { box-shadow: 0 0 0 8px rgba(227, 13, 33, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(227, 13, 33, 0); }
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #FFFFFF;
+    border-radius: 50%;
+    opacity: 0.8;
+  }
+
+  .pulse-dot.active {
+    opacity: 1;
+    animation: pulse-dot-anim 1.2s infinite;
+  }
+
+  @keyframes pulse-dot-anim {
+    0% { transform: scale(0.9); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+    100% { transform: scale(0.9); opacity: 1; }
+  }
+
+  .app-content {
+    flex: 1;
+    padding-bottom: calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 20px);
+  }
+</style>

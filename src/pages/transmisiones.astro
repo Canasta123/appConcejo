@@ -1,0 +1,509 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Transmisiones en Vivo - Concejo Municipal de Chía" description="Vea las transmisiones en vivo de las sesiones del Concejo Municipal de Chía.">
+  <div class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">Transmisiones en Vivo</h1>
+    </header>
+
+    <!-- Transmisión Destacada -->
+    <section class="live-featured" id="live-featured">
+      <div class="video-container" id="video-player">
+        <div class="placeholder-video">
+          <div class="play-overlay">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="live-info">
+        <div class="live-badge" id="live-badge" style="display:none;">
+          <span class="pulsing-dot"></span> EN VIVO
+        </div>
+        <div class="latest-badge" id="latest-badge">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Último Video
+        </div>
+        <h2 class="live-title" id="featured-title">Cargando transmisión...</h2>
+        <p class="live-desc" id="featured-desc">Conectando con el canal oficial del Concejo Municipal de Chía.</p>
+        <a href="https://www.youtube.com/@ConcejoChia" target="_blank" rel="noopener" class="btn-channel" id="btn-channel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+          <span id="btn-channel-text">Ver en YouTube</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Sesiones Anteriores -->
+    <section class="past-sessions">
+      <div class="section-header-row">
+        <h3 class="section-title">Sesiones Anteriores</h3>
+        <a href="https://www.youtube.com/@ConcejoChia/videos" target="_blank" rel="noopener" class="view-all-link">Ver todas →</a>
+      </div>
+      
+      <div class="videos-grid" id="videos-grid">
+        <!-- Loading skeleton -->
+        <div class="video-skeleton"><div class="skeleton-thumb"></div><div class="skeleton-text"><div class="sk-line long"></div><div class="sk-line short"></div></div></div>
+        <div class="video-skeleton"><div class="skeleton-thumb"></div><div class="skeleton-text"><div class="sk-line long"></div><div class="sk-line short"></div></div></div>
+        <div class="video-skeleton"><div class="skeleton-thumb"></div><div class="skeleton-text"><div class="sk-line long"></div><div class="sk-line short"></div></div></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ID Oficial de Canal para Concejo Municipal de Chía
+    const CHANNEL_ID = 'UC3K3cSdZd8ETB_3-CG8TavQ';
+    
+    const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    function formatFechaRelativa(fechaStr) {
+      if (!fechaStr) return '';
+      const d = new Date(fechaStr);
+      if (isNaN(d.getTime())) return '';
+      const now = new Date();
+      const diffMs = now - d;
+      const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      if (diffHoras < 1) return 'Hace un momento';
+      if (diffHoras < 24) return `Hace ${diffHoras}h`;
+      if (diffDias === 1) return 'Ayer';
+      if (diffDias < 7) return `Hace ${diffDias} días`;
+      return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    async function cargarVideos() {
+      const playerEl = document.getElementById('video-player');
+      const liveBadge = document.getElementById('live-badge');
+      const latestBadge = document.getElementById('latest-badge');
+      const titleEl = document.getElementById('featured-title');
+      const descEl = document.getElementById('featured-desc');
+
+      try {
+        const res = await fetch('/api/public/get_videos.php');
+        if (!res.ok) throw new Error('Endpoint no disponible');
+
+        const data = await res.json();
+        
+        if (data.is_live && data.live_video_id) {
+          // CANAL EN VIVO AHORA
+          if (liveBadge) liveBadge.style.display = 'inline-flex';
+          if (latestBadge) latestBadge.style.display = 'none';
+
+          if (playerEl) {
+            playerEl.innerHTML = `<iframe 
+              src="https://www.youtube.com/embed/${data.live_video_id}?autoplay=1&rel=0" 
+              title="Transmisión en Vivo - Concejo de Chía"
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen
+              style="width:100%;height:100%;position:absolute;top:0;left:0;border-radius:12px;">
+            </iframe>`;
+          }
+
+          if (titleEl) titleEl.textContent = 'Transmisión en Vivo - Sesión Plenaria';
+          if (descEl) descEl.textContent = 'Transmisión en directo desde el recinto del Concejo Municipal de Chía.';
+        } else {
+          // CANAL EN MODO OFFLINE / ÚLTIMAS GRABACIONES
+          if (liveBadge) liveBadge.style.display = 'none';
+          if (latestBadge) latestBadge.style.display = 'inline-flex';
+
+          if (data.videos && data.videos.length > 0) {
+            const first = data.videos[0];
+            if (playerEl && first.id) {
+              playerEl.innerHTML = `<iframe 
+                src="https://www.youtube.com/embed/${first.id}?rel=0&autoplay=0" 
+                title="${first.title}"
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+                style="width:100%;height:100%;position:absolute;top:0;left:0;border-radius:12px;">
+              </iframe>`;
+            }
+            if (titleEl) titleEl.textContent = first.title;
+            if (descEl) descEl.textContent = first.published ? `Publicado: ${formatFechaRelativa(first.published)}` : 'Transmisión Institucional';
+          }
+        }
+
+        const btnChannel = document.getElementById('btn-channel');
+        if (btnChannel && first.url) {
+          btnChannel.href = first.url;
+        }
+        
+        // Past sessions
+        const gridEl = document.getElementById('videos-grid');
+        if (!gridEl) return;
+        
+        const pastVideos = videos.slice(1, 7);
+        if (pastVideos.length === 0) {
+          gridEl.innerHTML = '<p style="text-align:center;color:#616161;padding:24px;">No hay sesiones anteriores disponibles.</p>';
+          return;
+        }
+        
+        window.reproducirVideoMain = function(vId, vTitle, vPub) {
+          if (playerEl && vId) {
+            playerEl.innerHTML = `<iframe 
+              src="https://www.youtube.com/embed/${vId}?autoplay=1&rel=0" 
+              title="${vTitle}"
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen
+              style="width:100%;height:100%;position:absolute;top:0;left:0;border-radius:12px;">
+            </iframe>`;
+          }
+          const titleEl = document.getElementById('featured-title');
+          if (titleEl) titleEl.textContent = vTitle;
+          const descEl = document.getElementById('featured-desc');
+          if (descEl) descEl.textContent = vPub ? `Publicado: ${formatFechaRelativa(vPub)}` : 'Transmisión Oficial';
+          
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        gridEl.innerHTML = pastVideos.map((v) => {
+          const thumbUrl = v.thumbnail || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`;
+          const safeTitle = (v.title || '').replace(/'/g, "\\'");
+          return `
+            <div onclick="window.reproducirVideoMain('${v.id}', '${safeTitle}', '${v.published}')" class="video-card" style="cursor:pointer;">
+              <div class="video-thumb" style="background-image:url('${thumbUrl}');background-size:cover;background-position:center;">
+                <svg class="play-icon" width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+              </div>
+              <div class="video-details">
+                <h4>${v.title}</h4>
+                <span class="video-date">${formatFechaRelativa(v.published)}</span>
+              </div>
+            </div>`;
+        }).join('');
+        
+      } catch (err) {
+        console.warn('Fallback YouTube Live Player:', err.message);
+        cargarFallback();
+      }
+    }
+
+    function cargarFallback() {
+      const titleEl = document.getElementById('featured-title');
+      if (titleEl) titleEl.textContent = 'Canal del Concejo Municipal de Chía';
+      
+      const descEl = document.getElementById('featured-desc');
+      if (descEl) descEl.textContent = 'Visita nuestro canal de YouTube para ver las sesiones del Concejo.';
+      
+      const gridEl = document.getElementById('videos-grid');
+      if (gridEl) {
+        gridEl.innerHTML = `
+          <a href="https://www.youtube.com/@ConcejoChia/videos" target="_blank" rel="noopener" class="video-card fallback-card">
+            <div class="video-thumb gradient-1">
+              <svg class="play-icon" width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+            </div>
+            <div class="video-details">
+              <h4>Ver todas las sesiones en YouTube</h4>
+              <span class="video-date">@ConcejoChia</span>
+            </div>
+          </a>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarVideos);
+  </script>
+</MainLayout>
+
+<style>
+  :root {
+    --primary: #3359A4;
+    --primary-dark: #2A4783;
+    --bg: #F5F5F5;
+    --surface: #FFFFFF;
+    --text-main: #212121;
+    --text-muted: #616161;
+    --error: #E30D21;
+    --border: #E0E0E0;
+  }
+
+  .page-container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background-color: var(--bg);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    margin: 0;
+  }
+
+  /* Featured Live */
+  .live-featured {
+    background-color: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+  }
+
+  .video-container {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background-color: #000;
+    position: relative;
+  }
+
+  .placeholder-video {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .play-overlay {
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+  }
+
+  .play-overlay:hover {
+    transform: scale(1.1);
+    color: #D32F2F;
+  }
+
+  .live-info {
+    padding: 16px;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(227, 13, 33, 0.1);
+    color: var(--error);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .latest-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgba(51, 89, 164, 0.1);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .pulsing-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--error);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(227, 13, 33, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(227, 13, 33, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(227, 13, 33, 0); }
+  }
+
+  .live-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+  }
+
+  .live-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+  }
+
+  .btn-channel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--error);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .btn-channel:hover {
+    background: #C50B1C;
+    transform: translateY(-1px);
+  }
+
+  /* Section header with "ver todas" */
+  .section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .section-header-row .section-title {
+    margin-bottom: 0;
+  }
+
+  .view-all-link {
+    font-size: 0.85rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .view-all-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Past Sessions */
+  .section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+  }
+
+  .videos-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 600px) {
+    .videos-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .video-card {
+    display: block;
+    text-decoration: none;
+    background-color: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .video-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  .video-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a2e;
+  }
+
+  .gradient-1 { background: linear-gradient(45deg, var(--primary-dark), var(--primary)); }
+  .gradient-2 { background: linear-gradient(45deg, #4A6DB8, var(--primary)); }
+  .gradient-3 { background: linear-gradient(45deg, var(--primary-dark), var(--primary)); }
+
+  .play-icon {
+    color: rgba(255,255,255,0.9);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    transition: transform 0.2s;
+  }
+
+  .video-card:hover .play-icon {
+    transform: scale(1.15);
+  }
+
+  .duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0,0,0,0.75);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .video-details {
+    padding: 12px;
+  }
+
+  .video-details h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0 0 4px 0;
+    color: var(--text-main);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .video-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Loading Skeletons */
+  .video-skeleton {
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .skeleton-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .skeleton-text {
+    padding: 12px;
+  }
+
+  .sk-line {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    margin-bottom: 8px;
+  }
+
+  .sk-line.long { width: 85%; }
+  .sk-line.short { width: 45%; }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
+

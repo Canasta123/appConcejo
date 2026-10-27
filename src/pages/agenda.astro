@@ -1,0 +1,420 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Agenda de Sesiones - Concejo Municipal de Chía" description="Consulte la agenda y programación de sesiones del Concejo Municipal de Chía.">
+  <div class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">Agenda de Sesiones</h1>
+    </header>
+
+    <!-- Selector de Mes -->
+    <div class="month-selector">
+      <button class="arrow-btn" id="btn-prev-month" aria-label="Mes anterior">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+      <h2 class="current-month" id="agenda-month-title">Cargando...</h2>
+      <button class="arrow-btn" id="btn-next-month" aria-label="Mes siguiente">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+
+    <!-- Mini Calendario Dinámico -->
+    <div class="calendar-view">
+      <div class="weekdays">
+        <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+      </div>
+      <div class="days-grid" id="agenda-days-grid">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+
+    <!-- Lista de Eventos -->
+    <div class="events-list-container">
+      <h3 class="list-title">Sesiones Programadas</h3>
+      <div class="events-list" id="agenda-events">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+  </div>
+
+<script>
+import { getAgenda } from '../utils/api.js';
+
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+let selectedDate = new Date(); // Mes actual
+
+function formatHora(fechaStr) {
+  if (!fechaStr) return '';
+  const d = new Date(fechaStr);
+  if (isNaN(d.getTime())) return '';
+  let h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+async function cargarAgendaMes() {
+  const monthTitle = document.getElementById('agenda-month-title');
+  const daysGrid = document.getElementById('agenda-days-grid');
+  const container = document.getElementById('agenda-events');
+
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth(); // 0 - 11
+
+  if (monthTitle) {
+    monthTitle.textContent = `${MESES_FULL[month]} ${year}`;
+  }
+
+  const eventos = await getAgenda(month + 1, year);
+
+  // Renderizar Días del Calendario
+  const firstDay = new Date(year, month, 1).getDay();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+
+  let daysHtml = '';
+  for (let i = 0; i < firstDay; i++) {
+    daysHtml += '<span class="day empty"></span>';
+  }
+
+  for (let d = 1; d <= totalDays; d++) {
+    const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === d);
+    const hasEvent = eventos && eventos.some(e => {
+      const ed = new Date(e.fecha_hora);
+      return !isNaN(ed.getTime()) && ed.getDate() === d;
+    });
+
+    daysHtml += `<span class="day ${isToday ? 'today' : ''} ${hasEvent ? 'active' : ''}">
+      ${d}
+      ${hasEvent ? '<div class="dot active"></div>' : ''}
+    </span>`;
+  }
+
+  if (daysGrid) daysGrid.innerHTML = daysHtml;
+
+  // Renderizar Lista de Eventos
+  if (!eventos || eventos.length === 0) {
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-agenda-box">
+          <div class="empty-icon">🗓️</div>
+          <h4>Sin sesiones programadas</h4>
+          <p>No hay eventos o sesiones registradas para ${MESES_FULL[month]} de ${year}.</p>
+        </div>`;
+    }
+    return;
+  }
+
+  if (container) {
+    container.innerHTML = eventos.map(e => {
+      const d = new Date(e.fecha_hora);
+      const dia = d.getDate();
+      const mesStr = MESES[d.getMonth()].toUpperCase();
+      const diaSem = DIAS_SEMANA[d.getDay()];
+      const hora = formatHora(e.fecha_hora);
+      const ytBtn = e.link_yt 
+        ? `<a href="${e.link_yt}" target="_blank" rel="noopener" class="yt-btn" style="text-decoration:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+            Ver Transmisión en Vivo
+          </a>`
+        : '';
+
+      return `
+        <article class="event-card active-event">
+          <div class="event-time-col">
+            <span class="e-date">${dia} ${mesStr}</span>
+            <span class="e-time">${hora}</span>
+          </div>
+          <div class="event-info">
+            <span class="e-type">${diaSem}</span>
+            <h4 class="e-title">${e.titulo}</h4>
+            <p class="e-loc"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Recinto del Concejo</p>
+            ${ytBtn}
+          </div>
+        </article>`;
+    }).join('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-prev-month')?.addEventListener('click', () => {
+    selectedDate.setMonth(selectedDate.getMonth() - 1);
+    cargarAgendaMes();
+  });
+
+  document.getElementById('btn-next-month')?.addEventListener('click', () => {
+    selectedDate.setMonth(selectedDate.getMonth() + 1);
+    cargarAgendaMes();
+  });
+
+  cargarAgendaMes();
+});
+</script>
+</MainLayout>
+
+<style>
+  :root {
+    --primary: #3359A4;
+    --primary-light: #4A6DB8;
+    --primary-dark: #2A4783;
+    --secondary: #009741;
+    --accent: #FFD402;
+    --bg: #F5F5F5;
+    --surface: #FFFFFF;
+    --text-main: #212121;
+    --text-muted: #616161;
+    --border: #E0E0E0;
+    --error: #E30D21;
+  }
+
+  .page-container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background-color: var(--bg);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    margin: 0;
+  }
+
+  /* Month Selector */
+  .month-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--surface);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .current-month {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin: 0;
+  }
+
+  .arrow-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  /* Calendar View */
+  .calendar-view {
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+  }
+
+  .day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    border-radius: 8px;
+    position: relative;
+  }
+
+  .day.empty {
+    color: transparent;
+  }
+
+  .day.today {
+    background-color: rgba(51, 89, 164, 0.1);
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .day.active {
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+  }
+
+  .dot {
+    width: 4px;
+    height: 4px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    margin-top: 2px;
+  }
+
+  .dot.active {
+    background-color: var(--accent);
+  }
+
+  /* Events List */
+  .list-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
+  }
+
+  .events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .event-card {
+    display: flex;
+    background-color: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+
+  .active-event {
+    border-left: 4px solid var(--primary);
+  }
+
+  .event-time-col {
+    background-color: var(--bg);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    border-right: 1px solid var(--border);
+  }
+
+  .e-date {
+    font-weight: 700;
+    color: var(--primary-dark);
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+
+  .e-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .event-info {
+    padding: 16px;
+    flex: 1;
+  }
+
+  .e-type {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--secondary);
+    background-color: rgba(0, 151, 65, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .e-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: var(--text-main);
+  }
+
+  .e-loc {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .e-loc svg {
+    margin-right: 4px;
+  }
+
+  .yt-btn {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(227, 13, 33, 0.1);
+    color: var(--error);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 12px;
+    cursor: pointer;
+  }
+
+  .yt-btn svg {
+    margin-right: 6px;
+  }
+
+  .empty-agenda-box {
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: 32px 16px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+  }
+
+  .empty-icon {
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+  }
+
+  .empty-agenda-box h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0 0 6px 0;
+  }
+
+  .empty-agenda-box p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+</style>
